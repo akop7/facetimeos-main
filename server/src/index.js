@@ -19,6 +19,7 @@ import {
   verifySessionToken,
 } from './auth.js';
 import { roomManager } from './room-manager.js';
+import { dynamoDbRoomManager } from './dynamodb-room-manager.js';
 import { setupSignaling } from './signaling.js';
 import { buildIceConfig, turnConfigured, turnProviders } from './turn.js';
 import * as docStore from './doc-store.js';
@@ -63,6 +64,7 @@ api.get('/health', (req, res) => {
   res.json({
     status: 'ok',
     ...roomManager.stats(),
+    dynamodb: dynamoDbRoomManager.stats(),
     turn: turnConfigured(),
     storage: DOC_STORE.enabled ? DOC_STORE.provider : 'disabled',
     desktopAuth: firebaseAdminConfigured(),
@@ -102,6 +104,9 @@ api.post('/rooms', (req, res) => {
   // does not leaves it null, and the first join names it after the host.
   const title = sanitizeDisplayName(req.body?.title, null);
   roomManager.createRoom(roomId, { title });
+  dynamoDbRoomManager
+    .createRoom(roomId, { role: ROLES.HOST }, { title, maxPeers: MAX_PEERS_PER_ROOM })
+    .catch(() => {});
 
   res.status(201).json({
     roomId,
@@ -123,16 +128,17 @@ api.get('/rooms/:roomId', asyncRoute(async (req, res) => {
   if (!isUuid(roomId)) return res.status(400).json({ error: 'bad-room-id' });
 
   const room = roomManager.getRoom(roomId);
+  const dynamoRoom = room ? null : await dynamoDbRoomManager.getRoom(roomId);
   await docStore.ensureLoaded(roomId);
   const stats = docStore.getStats(roomId);
 
   return res.json({
     roomId,
-    exists: Boolean(room) || stats.hasContent,
+    exists: Boolean(room) || Boolean(dynamoRoom) || stats.hasContent,
     live: Boolean(room),
-    title: room?.title ?? null,
-    locked: room?.locked ?? false,
-    participants: room?.size ?? 0,
+    title: room?.title ?? dynamoRoom?.metadata?.title ?? null,
+    locked: room?.locked ?? dynamoRoom?.metadata?.locked ?? false,
+    participants: room?.size ?? (dynamoRoom?.participants ? Object.keys(dynamoRoom.participants).length : 0),
     maxPeers: MAX_PEERS_PER_ROOM,
     hasSavedWork: stats.hasContent,
   });
@@ -217,8 +223,18 @@ api.delete('/rooms/:roomId/artifacts', asyncRoute(async (req, res) => {
 }));
 
 app.use('/rtc', api);
-// Kept for backwards compatibility with the old health probe path.
-app.get('/health', (req, res) => res.json({ status: 'ok', ...roomManager.stats() }));
+// Root health probe for AWS App Runner, ECS, and load balancer health checks.
+app.get('/health', (req, res) =>
+  res.json({
+    status: 'ok',
+    ...roomManager.stats(),
+    dynamodb: dynamoDbRoomManager.stats(),
+    turn: turnConfigured(),
+    storage: DOC_STORE.enabled ? DOC_STORE.provider : 'disabled',
+    desktopAuth: firebaseAdminConfigured(),
+    uptimeSeconds: Math.round(process.uptime()),
+  })
+);
 
 app.use((req, res) => res.status(404).json({ error: 'not-found' }));
 

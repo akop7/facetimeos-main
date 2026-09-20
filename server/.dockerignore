@@ -1,0 +1,13 @@
+node_modules
+npm-debug.log
+.git
+.gitignore
+.env
+.env.*
+.data
+test
+tools
+Dockerfile
+.dockerignore
+firestore.indexes.json
+firestore.rules

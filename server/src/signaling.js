@@ -6,6 +6,7 @@ import {
 } from './auth.js';
 import { RATE_LIMIT } from './config.js';
 import { roomManager, GRANTABLE_TOOLS } from './room-manager.js';
+import { dynamoDbRoomManager } from './dynamodb-room-manager.js';
 import * as docStore from './doc-store.js';
 
 /**
@@ -212,6 +213,14 @@ async function attachPeer(io, socket, result) {
     peers: roomManager.getRoomPeers(room.id),
   });
   io.to(roomChannel(room.id)).emit('room-state', roomStatePayload(room));
+
+  // Sync participant presence to AWS DynamoDB (with in-memory fallback)
+  dynamoDbRoomManager
+    .updateParticipantState(room.id, peer.peerId, true, {
+      displayName: peer.displayName,
+      role: peer.role,
+    })
+    .catch(() => {});
 }
 
 /** Remove a socket from its room and notify everyone still there. */
@@ -241,12 +250,16 @@ function handleDeparture(io, socket, { silent = false, reason = 'left' } = {}) {
   );
   if (!removed) return;
 
+  // Sync participant disconnection to AWS DynamoDB
+  dynamoDbRoomManager.updateParticipantState(roomId, peerId, false).catch(() => {});
+
   if (!silent) {
     io.to(roomChannel(roomId)).emit('peer-left', { peerId, reason });
   }
 
   if (roomClosed) {
-    // Flush the artifacts so the room can be resumed from its link later.
+    // Record room closure in DynamoDB and flush artifacts
+    dynamoDbRoomManager.closeRoom(roomId).catch(() => {});
     docStore.flush(roomId).catch(() => {});
     return;
   }

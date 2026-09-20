@@ -146,3 +146,7 @@ export const RATE_LIMIT = {
 
 export const MAX_PEERS_PER_ROOM = int(process.env.MAX_PEERS_PER_ROOM, 12);
 export const MAX_DISPLAY_NAME = 40;
+
+export const DYNAMODB_TABLE_NAME = process.env.DYNAMODB_TABLE_NAME || 'facetimeos-rooms';
+export const AWS_REGION = process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'us-east-1';
+export const DYNAMODB_ENDPOINT = process.env.DYNAMODB_ENDPOINT || process.env.AWS_ENDPOINT || null;
