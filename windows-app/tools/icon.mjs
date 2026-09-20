@@ -1,0 +1,12 @@
+import fs from 'node:fs/promises';
+import { createRequire } from 'node:module';
+const require = createRequire(new URL('../../client/package.json', import.meta.url));
+const sharp = require('sharp');
+const png = await sharp(await fs.readFile(new URL('../assets/icon.svg', import.meta.url))).resize(256, 256).png().toBuffer();
+const header = Buffer.alloc(22);
+header.writeUInt16LE(1, 2); header.writeUInt16LE(1, 4);
+header.writeUInt16LE(1, 10); header.writeUInt16LE(32, 12);
+header.writeUInt32LE(png.length, 14); header.writeUInt32LE(22, 18);
+const output = new URL('../public/', import.meta.url);
+await fs.mkdir(output, { recursive: true });
+await fs.writeFile(new URL('icon.ico', output), Buffer.concat([header, png]));

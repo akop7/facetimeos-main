@@ -1,0 +1,31 @@
+{
+  "name": "client",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev --port 3000",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "test": "node --import ./tools/register-src-resolver.mjs --test \"test/*.test.js\""
+  },
+  "dependencies": {
+    "@monaco-editor/react": "^4.7.0",
+    "firebase": "^12.17.1",
+    "monaco-editor": "^0.56.0",
+    "next": "16.3.0",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "react-rnd": "^10.5.3",
+    "socket.io-client": "^4.8.3",
+    "y-protocols": "^1.0.7",
+    "yjs": "^13.6.32"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "eslint": "^9",
+    "eslint-config-next": "16.3.0",
+    "tailwindcss": "^4"
+  }
+}

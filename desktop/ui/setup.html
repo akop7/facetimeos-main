@@ -1,0 +1,188 @@
+<!doctype html>
+<!--
+  First run, and "File → Change server URL" afterwards.
+
+  The shell has no URL baked into it: this app can be deployed anywhere, and a
+  hardcoded address would make the installer useful to exactly one person. So the
+  window opens here until it knows where to point.
+
+  The Google fields are optional. Without them the app still runs — sign-in just
+  falls back to whatever the page itself offers.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>FaceTimeOS — setup</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #0b0b0f;
+        --panel: #15151d;
+        --line: #2a2a36;
+        --text: #f4f4f5;
+        --muted: #a1a1aa;
+        --accent: #6366f1;
+      }
+      * { box-sizing: border-box }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 2rem 1.25rem;
+        background: var(--bg);
+        color: var(--text);
+        font: 15px/1.55 system-ui, -apple-system, 'Segoe UI', sans-serif;
+      }
+      main { width: 100%; max-width: 32rem }
+      h1 { font-size: 1.35rem; margin: 0 0 0.35rem }
+      .lede { margin: 0 0 1.5rem; color: var(--muted); font-size: 0.9rem }
+      form {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 0.75rem;
+        padding: 1.25rem;
+      }
+      label { display: block; margin-bottom: 1rem }
+      .name { display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.3rem }
+      .hint { display: block; color: var(--muted); font-size: 0.78rem; margin-bottom: 0.4rem }
+      input {
+        width: 100%;
+        padding: 0.6rem 0.7rem;
+        border-radius: 0.5rem;
+        border: 1px solid var(--line);
+        background: #0f0f16;
+        color: var(--text);
+        font: inherit;
+        font-size: 0.9rem;
+      }
+      input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px }
+      details { margin: 0.25rem 0 1rem; border-top: 1px solid var(--line); padding-top: 0.9rem }
+      summary { cursor: pointer; font-size: 0.85rem; font-weight: 600 }
+      summary::marker { color: var(--muted) }
+      .row { display: flex; gap: 0.6rem; align-items: center; margin-top: 0.5rem }
+      button {
+        font: inherit;
+        font-size: 0.9rem;
+        font-weight: 600;
+        padding: 0.55rem 1.1rem;
+        border-radius: 0.5rem;
+        border: 1px solid transparent;
+        background: var(--accent);
+        color: #fff;
+        cursor: pointer;
+      }
+      button.ghost { background: transparent; border-color: var(--line); color: var(--text) }
+      button:disabled { opacity: 0.55; cursor: progress }
+      .status { margin: 0; font-size: 0.85rem; min-height: 1.3em }
+      .status[data-kind='error'] { color: #f87171 }
+      .status[data-kind='ok'] { color: #4ade80 }
+      .version { margin: 1rem 0 0; color: var(--muted); font-size: 0.75rem; text-align: center }
+      a { color: #a5b4fc }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Where is FaceTimeOS running?</h1>
+      <p class="lede">
+        This window is the app itself — it just needs the address of your deployment.
+        Anything like <code>https://facetimeos.vercel.app</code>, or
+        <code>http://localhost:3000</code> while you are developing.
+      </p>
+
+      <form id="form">
+        <label>
+          <span class="name">App URL</span>
+          <span class="hint">The page you would open in a browser. http:// or https:// only.</span>
+          <input id="appUrl" type="url" placeholder="https://facetimeos.vercel.app" required
+                 autocomplete="off" spellcheck="false" />
+        </label>
+
+        <details id="google">
+          <summary>Google sign-in (optional)</summary>
+          <p class="hint" style="margin-top: 0.6rem">
+            Only needed if you want the Google button to work inside this window. Create
+            an OAuth client of type <strong>Desktop app</strong> in Google Cloud and paste
+            it here — Google refuses sign-in inside app windows, so the shell opens your
+            real browser and passes the result back. See DESKTOP.md for the five steps.
+          </p>
+          <label>
+            <span class="name">Client ID</span>
+            <input id="googleClientId" type="text" placeholder="…apps.googleusercontent.com"
+                   autocomplete="off" spellcheck="false" />
+          </label>
+          <label>
+            <span class="name">Client secret</span>
+            <span class="hint">Stored on this machine only. Never sent to the page.</span>
+            <input id="googleClientSecret" type="password" autocomplete="off" />
+          </label>
+        </details>
+
+        <div class="row">
+          <button id="save" type="submit">Save and open</button>
+          <p class="status" id="status" role="status" aria-live="polite"></p>
+        </div>
+      </form>
+      <p class="version" id="version"></p>
+    </main>
+    <script>
+      const shell = window.facetimeosShell;
+      const $ = (id) => document.getElementById(id);
+      const status = $('status');
+
+      const say = (text, kind = '') => {
+        status.textContent = text;
+        status.dataset.kind = kind;
+      };
+
+      async function load() {
+        if (!shell) {
+          say('This page only works inside the FaceTimeOS desktop app.', 'error');
+          $('save').disabled = true;
+          return;
+        }
+        const config = await shell.getConfig();
+        $('appUrl').value = config.appUrl || '';
+        $('version').textContent = `FaceTimeOS desktop ${config.version}`;
+
+        if (config.hasGoogleSecret) {
+          $('googleClientSecret').placeholder = 'saved — leave blank to keep it';
+        }
+        if (config.hasGoogleClient) $('google').open = true;
+
+        if (config.fromEnv) {
+          // FACETIMEOS_APP_URL wins over anything saved here, so saving would look
+          // like it did nothing.
+          say('FACETIMEOS_APP_URL is set, and it overrides this.', 'error');
+        }
+        $('appUrl').focus();
+      }
+
+      $('form').addEventListener('submit', async (event) => {
+        event.preventDefault();
+        $('save').disabled = true;
+        say('Saving…');
+        try {
+          // Blank fields are omitted, not sent as empty strings: the main process
+          // treats them as "leave alone".
+          const patch = { appUrl: $('appUrl').value };
+          const id = $('googleClientId').value.trim();
+          const secret = $('googleClientSecret').value;
+          if (id) patch.googleClientId = id;
+          if (secret) patch.googleClientSecret = secret;
+
+          const saved = await shell.saveConfig(patch);
+          say(`Opening ${saved.appUrl}…`, 'ok');
+        } catch (error) {
+          // Electron prefixes IPC errors with the handler name; the useful half is
+          // after the last colon.
+          say(String(error.message || error).replace(/^.*Error:\s*/, ''), 'error');
+          $('save').disabled = false;
+        }
+      });
+
+      load().catch((error) => say(String(error.message || error), 'error'));
+    </script>
+  </body>
+</html>

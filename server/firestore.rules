@@ -1,0 +1,15 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // FaceTimeOS clients do not read/write Firestore directly. The Render
+    // server verifies room capabilities and uses Firebase Admin (IAM).
+    match /facetimeosRooms/{document=**} {
+      allow read, write: if false;
+    }
+    // Safe default for a dedicated FaceTimeOS project. If this Firebase project
+    // serves other apps, preserve their reviewed, collection-specific rules.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

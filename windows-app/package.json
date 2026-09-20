@@ -1,0 +1,45 @@
+{
+  "name": "facetimeos-windows",
+  "productName": "FaceTimeOS",
+  "version": "2.0.0",
+  "description": "FaceTimeOS for Windows — calls and a shared workspace",
+  "author": "Alok Gond",
+  "private": true,
+  "type": "module",
+  "main": "electron/main.cjs",
+  "scripts": {
+    "build": "node tools/icon.mjs && vite build",
+    "start": "npm run build && electron .",
+    "test": "node --test test/*.test.mjs",
+    "smoke": "electron test/smoke.cjs",
+    "pack": "npm run build && electron-builder --win --x64 --dir --publish never",
+    "dist": "npm run build && electron-builder --win nsis --x64 --publish never"
+  },
+  "engines": { "node": ">=22.12" },
+  "devDependencies": {
+    "@tailwindcss/vite": "4.3.3",
+    "@vitejs/plugin-react": "6.1.1",
+    "electron": "44.2.0",
+    "electron-builder": "26.15.3",
+    "esbuild": "0.28.2",
+    "vite": "8.2.2"
+  },
+  "build": {
+    "appId": "com.alokgond.facetimeos.windows",
+    "productName": "FaceTimeOS",
+    "artifactName": "FaceTimeOS-Setup-${version}-${arch}.${ext}",
+    "directories": { "output": "release" },
+    "files": ["dist/**/*", "electron/**/*", "package.json"],
+    "asar": true,
+    "protocols": [{ "name": "FaceTimeOS room", "schemes": ["facetimeos"] }],
+    "win": { "target": "nsis", "icon": "public/icon.ico" },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "deleteAppDataOnUninstall": false
+    }
+  }
+}

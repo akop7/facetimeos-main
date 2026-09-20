@@ -1,0 +1,49 @@
+# Dependencies
+node_modules/
+
+# Build output
+.next/
+out/
+build/
+dist/
+release/
+windows-app/public/icon.ico
+
+# Environment / secrets — NEVER commit these
+.env
+.env.*
+!.env.example
+
+# TLS material
+certificates/
+*.pem
+*.key
+*.crt
+*service-account*.json
+*firebase-adminsdk*.json
+*.jks
+*.p12
+*.pfx
+*signing*.properties
+google-services.json
+
+# Runtime data (server-side room snapshots)
+.data/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Test/coverage
+coverage/
+*.tsbuildinfo

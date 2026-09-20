@@ -1,0 +1,20 @@
+# Dependencies
+node_modules/
+
+# Secrets — server/.env holds JWT_SECRET and TURN_SECRET
+.env
+.env.*
+!.env.example
+
+# Persisted room snapshots written by src/doc-store.js
+.data/
+
+# TLS material
+certificates/
+*.pem
+*.key
+*.crt
+
+# Logs
+*.log
+npm-debug.log*

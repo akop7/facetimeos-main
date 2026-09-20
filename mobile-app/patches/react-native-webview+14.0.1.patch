@@ -1,0 +1,57 @@
+diff --git a/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/RNCWebChromeClient.java b/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/RNCWebChromeClient.java
+index 1b5c4c9..c5bc8c7 100644
+--- a/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/RNCWebChromeClient.java
++++ b/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/RNCWebChromeClient.java
+@@ -142,49 +142,6 @@ public class RNCWebChromeClient extends WebChromeClient implements LifecycleEven
+     @Override
+     public void onPermissionRequest(final PermissionRequest request) {
+-
+-        grantedPermissions = new ArrayList<>();
+-
+-        ArrayList<String> requestedAndroidPermissions = new ArrayList<>();
+-        for (String requestedResource : request.getResources()) {
+-            String androidPermission = null;
+-
+-            if (requestedResource.equals(PermissionRequest.RESOURCE_AUDIO_CAPTURE)) {
+-                androidPermission = Manifest.permission.RECORD_AUDIO;
+-            } else if (requestedResource.equals(PermissionRequest.RESOURCE_VIDEO_CAPTURE)) {
+-                androidPermission = Manifest.permission.CAMERA;
+-            } else if(requestedResource.equals(PermissionRequest.RESOURCE_PROTECTED_MEDIA_ID)) {
+-                if (mAllowsProtectedMedia) {
+-                  grantedPermissions.add(requestedResource);
+-                } else {
+-                  /**
+-                   * Legacy handling (Kept in case it was working under some conditions (given Android version or something))
+-                   *
+-                   * Try to ask user to grant permission using Activity.requestPermissions
+-                   *
+-                   * Find more details here: https://github.com/react-native-webview/react-native-webview/pull/2732
+-                   */
+-                  androidPermission = PermissionRequest.RESOURCE_PROTECTED_MEDIA_ID;
+-                }            }
+-            // TODO: RESOURCE_MIDI_SYSEX, RESOURCE_PROTECTED_MEDIA_ID.
+-            if (androidPermission != null) {
+-                if (ContextCompat.checkSelfPermission(this.mWebView.getThemedReactContext(), androidPermission) == PackageManager.PERMISSION_GRANTED) {
+-                    grantedPermissions.add(requestedResource);
+-                } else {
+-                    requestedAndroidPermissions.add(androidPermission);
+-                }
+-            }
+-        }
+-
+-        // If all the permissions are already granted, send the response to the WebView synchronously
+-        if (requestedAndroidPermissions.isEmpty()) {
+-            request.grant(grantedPermissions.toArray(new String[0]));
+-            grantedPermissions = null;
+-            return;
+-        }
+-
+-        // Otherwise, ask to Android System for native permissions asynchronously
+-
+-        this.permissionRequest = request;
+-
+-        requestPermissions(requestedAndroidPermissions);
++        // FaceTimeOS: pages and shared code must never inherit native call permissions.
++        // Calls use react-native-webrtc, not these untrusted browser surfaces.
++        request.deny();
+     }

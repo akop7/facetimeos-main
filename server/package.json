@@ -1,0 +1,30 @@
+{
+  "name": "facetimeos-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Signaling, authorization and artifact-persistence server for FaceTimeOS",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "test": "node --test \"test/*.test.js\"",
+    "turn:check": "node tools/turn-check.mjs"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "cors": "2.8.6",
+    "dotenv": "16.6.1",
+    "express": "4.22.2",
+    "firebase-admin": "14.3.0",
+    "jsonwebtoken": "9.0.3",
+    "socket.io": "4.8.3"
+  },
+  "overrides": {
+    "qs": "^6.16.0",
+    "gaxios": { "uuid": "^11.1.1" },
+    "teeny-request": { "uuid": "^11.1.1" }
+  }
+}

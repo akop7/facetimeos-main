@@ -1,0 +1,95 @@
+name: CI
+
+# Three packages, three jobs, run on every push and pull request. None of them needs
+# a browser, a camera or a TURN server: everything here is logic that runs in bare
+# Node, which is also the reason the test suites are shaped the way they are.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# A second push to the same branch cancels the first — nothing here is worth
+# paying for twice.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  server:
+    name: server — tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+
+      - run: npm ci
+        working-directory: server
+
+      - run: npm test
+        working-directory: server
+        env:
+          # `config.js` refuses to boot in production without these. The tests run
+          # with NODE_ENV unset, so they are only here to keep a stray production
+          # code path from failing for the wrong reason.
+          JWT_SECRET: ci-only-secret-not-used-in-production-0123456789
+          CLIENT_ORIGIN: http://localhost:3000
+
+  client:
+    name: client — lint, tests, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20.11'
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+
+      - run: npm ci
+        working-directory: client
+
+      - run: npx eslint src test tools
+        working-directory: client
+
+      - run: npm test
+        working-directory: client
+
+      # The build is the only check that compiles the components and the app
+      # router, which the tests deliberately do not cover. It runs last because it
+      # is by far the slowest.
+      - run: npm run build
+        working-directory: client
+        env:
+          # A build must not bake in a signaling URL: the client resolves it at
+          # runtime, and a value here would ship the CI's idea of the server.
+          NEXT_TELEMETRY_DISABLED: '1'
+
+  desktop:
+    name: desktop — tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20.11'
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+
+      # Only the two source modules are under test, and both are deliberately free
+      # of Electron imports — so this job skips the ~150MB binary download and the
+      # Windows runner it would otherwise need. `npm run smoke` and `npm run dist`
+      # are the parts that need a real Electron, and they run locally.
+      - run: npm ci --ignore-scripts
+        working-directory: desktop
+
+      - run: npm test
+        working-directory: desktop

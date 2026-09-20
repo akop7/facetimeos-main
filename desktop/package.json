@@ -1,0 +1,42 @@
+{
+  "name": "facetimeos-desktop",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Windows desktop shell for FaceTimeOS — a real app window, with sign-in handed to the system browser",
+  "main": "main.js",
+  "type": "module",
+  "author": "AlokGond",
+  "scripts": {
+    "start": "electron .",
+    "smoke": "node tools/smoke.mjs",
+    "icon": "node tools/make-icon.mjs",
+    "test": "node --test \"test/*.test.js\"",
+    "dist": "npm run icon && electron-builder --win",
+    "pack": "npm run icon && electron-builder --win --dir"
+  },
+  "devDependencies": {
+    "electron": "44.0.0",
+    "electron-builder": "26.15.3"
+  },
+  "build": {
+    "appId": "dev.facetimeos.desktop",
+    "productName": "FaceTimeOS",
+    "copyright": "Copyright © 2026 AlokGond",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": ["main.js", "preload.cjs", "src/**/*", "ui/**/*"],
+    "win": {
+      "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "FaceTimeOS"
+    }
+  }
+}
