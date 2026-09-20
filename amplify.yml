@@ -11,7 +11,7 @@ applications:
             - env | grep -e NEXT_PUBLIC_ >> .env.production || true
             - npm run build
       artifacts:
-        baseDirectory: .next
+        baseDirectory: out
         files:
           - '**/*'
       cache:
